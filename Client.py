@@ -13,31 +13,41 @@ def send_message(sock, message, server_address):
     sock.sendto(serialized_message, server_address)
 
 def handle_response():
-    while True:
-        data = sock.recvfrom(1024)
-        message = json.loads(data.decode())
+    data, addr = sock.recvfrom(1024)
+    message = json.loads(data.decode('utf-8'))
+    print(message['message'])
 
-        print(f"{message['message']}")
+        # except socket.error as e:
+        #     print("Error: Connection to the Server has failed! Please check IP Address and Port Number.")
+        #     break
 
 def send_commands():
     is_registered = False
 
-    while True:
-        user_input = input("Enter command => ")
-        parts = user_input.split()
-        command = parts[0]
-        params = parts[1:]
+    
+    user_input = input("Enter command => ")
+    parts = user_input.split()
+    command = parts[0]
+    params = parts[1:]
 
-        message = {'command': command, 'params': params}
+    message = {'command': command, 'params': params}
+    print(len(params))
+    if command == '/join':
+        if len(params) == 2:
+            print("gere")
 
-        if command == '/register':
-            if len(params) == 1:
-                if is_registered:
-                    print("Error: You are already registered.\n")
-                else:
-                    send
-            else:
-                print("Error: Command parameters do not match or is not allowed.\n")
+    print("12")
+
+        # if command == '/register':
+        #     if len(params) == 1:
+        #         if is_registered:
+        #             print("Error: You are already registered.\n")
+        #         else:
+        #             print("here")
+        #             break
+        #     else:
+        #         print("Error: Command parameters do not match or is not allowed.\n")
+
 
 
 
@@ -72,17 +82,25 @@ def main():
             # succesful connection
             if len(params) == 2 and (params[0] =='127.0.0.1' or params[0] == 'localhost') and params[1] == '12345':
                 server_address = (params[0], int(params[1]))
-                
-                sock.connect(server_address)
-                print("Connected to the server.")
 
-                # thread for handling responses from server
-                response_thread = threading.Thread(target=handle_response)
+                data = {
+                    "command": "/join",
+                    "params": server_address
+                }
+                
+                serialized_message = json.dumps(data).encode('utf-8')
+                sock.sendto(serialized_message, server_address)
+                handle_response()
+
+                
                 # thread for handling user input
                 send_thread = threading.Thread(target=send_commands)
+                # thread for handling responses from server
+                response_thread = threading.Thread(target=handle_response)
 
-                response_thread.start()
+                
                 send_thread.start()
+                response_thread.start()
               
             else:
                 print("Error: Connection to the Server has failed! Please check IP Address and Port Number.\n")

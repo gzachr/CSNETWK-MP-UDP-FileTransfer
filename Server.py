@@ -41,15 +41,29 @@ def help(params, addr):
 command_list = {
     '/join': join,
     '/register': register,
-     '/store': store,
-     '/dir': dir,
-     '/get': get,
-     '/?': help,
+    '/store': store,
+    '/dir': dir,
+    '/get': get,
+    '/?': help,
 }
 
 def parse_message(message_str):
-    message = json.loads(message_str)
-    return message["command"], message["params"]
+    try:
+        # Attempt to parse the JSON string
+        message = json.loads(message_str)
+
+        # Ensure that the parsed result is a dictionary
+        if isinstance(message, dict):
+            return message.get("command"), message.get("params")
+        else:
+            # Handle the case where the JSON string does not represent a dictionary
+            print("Error: The JSON string does not represent a dictionary.")
+            return None, None
+
+    except json.JSONDecodeError:
+        # Handle the case where the JSON decoding fails
+        print("Error: Invalid JSON string.")
+        return None, None
 
 def main():
     #UDP socket
@@ -57,18 +71,22 @@ def main():
     sock.bind((server_ip, server_port))
 
     print("Server is listening on {}, Port:{}".format(server_ip, server_port))
+    print("hello")
 
     while True:
         data, addr = sock.recvfrom(1024)
         message_str = data.decode('utf-8')
         command, message = parse_message(message_str)
+        print(command, message)
 
         if command == '/join':
-            message = {"head": "join", "message": "You are already connected to the server"}
+            message = {"head": "join", "message": "Connection to the File Exchange Server is successful!"}
             send_message(message, addr)
 
         else:
             send_message({'message': 'Error: Command not found.'}, addr)
+
+        
         
 if __name__ == "__main__":
     main()
