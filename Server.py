@@ -3,7 +3,6 @@
 # CSNETWK S12 MP
 import socket
 import json
-import threading
 
 server_ip = '127.0.0.1'
 server_port = 12345
@@ -37,6 +36,8 @@ def get(params, addr):
 def help(params, addr):
     pass
 
+
+
 command_list = {
     '/join': join,
     '/register': register,
@@ -55,13 +56,17 @@ def main():
     sock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
     sock.bind((server_ip, server_port))
 
+    print("Server is listening on {}, Port:{}".format(server_ip, server_port))
+
     while True:
         data, addr = sock.recvfrom(1024)
         message_str = data.decode('utf-8')
         command, message = parse_message(message_str)
 
-        if command in command_list:
-            command_list[command](message)(addr)
+        if command == '/join':
+            message = {"head": "join", "message": "You are already connected to the server"}
+            send_message(message, addr)
+
         else:
             send_message({'message': 'Error: Command not found.'}, addr)
         
