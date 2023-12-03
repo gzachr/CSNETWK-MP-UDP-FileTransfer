@@ -6,6 +6,7 @@ import json
 from datetime import datetime
 
 clients = {}
+files =[]
 
 # Create a UDP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -122,8 +123,9 @@ while True:
         for key, value in clients.items():
             if value == address:
                 handle = key
-                
+            
             file_name = response['params'][0]
+            files.append(file_name)
             result = receive_file(file_name)
 
             if result:
