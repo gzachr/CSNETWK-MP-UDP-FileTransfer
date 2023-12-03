@@ -37,7 +37,7 @@ def receive_response():
                 response = json.loads(data.decode())
 
                 if response['command'] == 'join' or response['command'] == 'error' or response['command'] == 'store':
-                        print(f"{response['message']}\n")
+                    print(f"{response['message']}\n")
                 
                 elif response['command'] == 'leave':
                     print(f"{response['message']}\n")
@@ -48,6 +48,9 @@ def receive_response():
                     is_registered = True
                     print(f"Welcome {response['client']}!")
                     print(f"{response['message']}\n")
+
+                elif response['command'] == 'msg':
+                    print(f"{response['handle']}: {response['message']}\n")
 
                 elif response['command'] == 'all':
                     print(f"{response['handle']}: {response['message']}\n")
