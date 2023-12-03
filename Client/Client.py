@@ -4,8 +4,10 @@
 import socket
 import json
 import threading
+import os
 
 server_address = None
+is_registered = False
 
 def display_commands():
     print('\nValid Commands:')
@@ -22,6 +24,7 @@ def display_commands():
 # receive messages from server
 def receive_response():
     global server_address
+    global is_registered
 
     while True:
         if server_address is not None:
@@ -38,9 +41,11 @@ def receive_response():
                 
                 elif response['command'] == 'leave':
                     print(f"{response['message']}\n")
-                    server_address = None  
+                    server_address = None
+                    is_registered = False  
                 
                 elif response['command'] == 'register':
+                    is_registered = True
                     print(f"Welcome {response['client']}!")
                     print(f"{response['message']}\n")
 
@@ -75,9 +80,36 @@ def start():
             else:
                 print('Error: Connection to the Server has failed! Please check IP Address and Port Number.\n')
         
-        elif command == '/register' or command == '/store' or command == '/get' or command == '/dir' or command == '/msg' or command == '/all':
+        elif command == '/register' or command == '/get' or command == '/dir' or command == '/msg' or command == '/all':
             if server_address:
                 client_socket.sendto(json.dumps(message).encode('utf-8'), server_address)
+            else:
+                print('Error: Please connect to the server first.\n')
+        
+        elif command == '/store':
+            print(params)
+            if server_address:
+                if is_registered:
+                    if len(params) == 1:
+                        if os.path.isfile(params[0]):
+                            try:
+                                with open(params[0], 'rb') as file:
+                                    file_data = file.read(1024)
+
+                                    client_socket.sendto(json.dumps(message).encode('utf-8'), server_address)
+
+                                    while file_data:
+                                        client_socket.sendto(file_data, server_address)
+                                        file_data = file.read(1024)
+
+                            except Exception as e:
+                                print(f"Error: {e}")
+                        else:
+                            print('Error: File not found.\n')
+                    else:
+                        print('Error: Command parameters do not match or is not allowed.\n')
+                else:
+                    print('Error: Please register to the server first.\n')
             else:
                 print('Error: Please connect to the server first.\n')
         

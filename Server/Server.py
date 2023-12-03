@@ -3,6 +3,7 @@
 # CSNETWK S12 MP
 import socket
 import json
+from datetime import datetime
 
 clients = {}
 
@@ -14,6 +15,23 @@ server_address = ('127.0.0.1', 12345)
 sock.bind(server_address)
 
 print('Server started at {} port {}'.format(*server_address))
+
+def receive_file(file_name):
+    try:
+        with open(file_name, 'wb') as file:
+            print('Receiving file...')
+
+            while True:
+                data, address = sock.recvfrom(1024)
+                if data.decode() == 'EOF':
+                    print('File received.')
+                    break
+                file.write(data)
+            
+            return True
+    except FileNotFoundError:
+        print(f'Error: {e}')
+        return False
 
 while True:
     data, address = sock.recvfrom(1024)
@@ -97,7 +115,32 @@ while True:
 
     # handle storing of file
     elif response['command'] == '/store':
-        pass
+        flag = True
+        
+        for key, value in clients.items():
+            if value == address:
+                handle = key
+                
+            file_name = response['params'][0]
+            result = receive_file(file_name)
+
+            if result:
+                formatted_time = datetime.now().strftime("<%Y-%m-%d %H:%M:%S>")
+                message = {'command': 'store', 'message': f"{handle}{formatted_time}: Uploaded {file_name}"}
+                sock.sendto(json.dumps(message).encode('utf-8'), address)
+            else:
+                message = {'command': 'error', 'message': "Error: File not successfully stored."}
+                sock.sendto(json.dumps(message).encode('utf-8'), address)
+            
+            flag = False
+            break
+
+        # notify that user is unregistered
+        if flag:
+            message = {'command': 'error', 'message': "Error: You are not registered."}
+            sock.sendto(json.dumps(message).encode('utf-8'), address)
+
+
 
     # handle message to single client
     elif response['command'] == '/msg':
