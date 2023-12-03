@@ -155,7 +155,29 @@ while True:
 
     # handle message to all clients
     elif response['command'] == '/all':
-        pass
+        user_handle = None
+       
+        for key, value in clients.items():
+            if value == address:
+                user_handle = key
+
+        if user_handle == None:
+            message = {'command': 'error', 'handle': user_handle, 'message': "Register a unique handle/alias first."}
+            sock.sendto(json.dumps(message).encode('utf-8'), address)
+        else:
+            print(len(response['params']))
+            if len(response['params']) == 0:
+                message = {'command': 'error', 'handle': user_handle, 'message': 'Error: Command parameters do not match or is not allowed.\n'}
+                sock.sendto(json.dumps(message).encode('utf-8'), address)
+
+            else:
+                response = ' '.join(response['params'])
+                message = {'command': 'all', 'handle': user_handle, 'message': response}
+
+                for key, value in clients.items():
+                    if value != address:
+                        sock.sendto(json.dumps(message).encode('utf-8'), value)
+        
 
     # if command does not exist
     else:
