@@ -49,6 +49,9 @@ def receive_response():
                     print(f"Welcome {response['client']}!")
                     print(f"{response['message']}\n")
 
+                elif response['command'] == 'all':
+                    print(f"{response['handle']}: {response['message']}\n")
+
                 # do message based on other responses
             
             except json.JSONDecodeError:
