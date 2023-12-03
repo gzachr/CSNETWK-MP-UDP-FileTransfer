@@ -23,12 +23,14 @@ def receive_file(file_name):
 
             while True:
                 data, address = sock.recvfrom(1024)
-                if data.decode() == 'EOF':
-                    print('File received.')
+                if not data:
                     break
                 file.write(data)
             
+            file.close()
+            print('File received.')
             return True
+        
     except FileNotFoundError:
         print(f'Error: {e}')
         return False
@@ -54,7 +56,7 @@ while True:
     elif response['command'] == '/register':
         # check num of params
         if len(response['params']) != 1:
-            message = {'command': 'error', 'message': 'Error: Command parameters do not match or is not allowed.\n'}
+            message = {'command': 'error', 'message': 'Error: Command parameters do not match or is not allowed.'}
             sock.sendto(json.dumps(message).encode('utf-8'), address)
 
         else:
@@ -64,14 +66,14 @@ while True:
 
                 # check if handle is unique
                 if key == handle:
-                    message = {'command': 'error', 'message': 'Error: Registration failed. Handle or alias already exists.\n'}
+                    message = {'command': 'error', 'message': 'Error: Registration failed. Handle or alias already exists.'}
                     sock.sendto(json.dumps(message).encode('utf-8'), address)
                     flag = False
                     break
 
                 # check if address is unique
                 elif value == address:
-                    message = {'command': 'error', 'message': 'Error: Registration failed. Address is already registered.\n'}
+                    message = {'command': 'error', 'message': 'Error: Registration failed. Address is already registered.'}
                     sock.sendto(json.dumps(message).encode('utf-8'), address)
                     flag = False
                     break
@@ -89,7 +91,7 @@ while True:
     elif response['command'] == '/leave':
         # check num of params
         if len(response['params']) != 0:
-            message = {'command': 'error', 'message': 'Error: Command parameters do not match or is not allowed.\n'}
+            message = {'command': 'error', 'message': 'Error: Command parameters do not match or is not allowed.'}
             sock.sendto(json.dumps(message).encode('utf-8'), address)
 
         else:
@@ -125,10 +127,12 @@ while True:
             result = receive_file(file_name)
 
             if result:
+                print("in success result")
                 formatted_time = datetime.now().strftime("<%Y-%m-%d %H:%M:%S>")
                 message = {'command': 'store', 'message': f"{handle}{formatted_time}: Uploaded {file_name}"}
                 sock.sendto(json.dumps(message).encode('utf-8'), address)
             else:
+                print("in fail result")
                 message = {'command': 'error', 'message': "Error: File not successfully stored."}
                 sock.sendto(json.dumps(message).encode('utf-8'), address)
             
@@ -137,6 +141,7 @@ while True:
 
         # notify that user is unregistered
         if flag:
+            print("in no client result")
             message = {'command': 'error', 'message': "Error: You are not registered."}
             sock.sendto(json.dumps(message).encode('utf-8'), address)
 
@@ -152,7 +157,7 @@ while True:
 
     # if command does not exist
     else:
-        message = {'command': 'error', 'message': 'Error: Command not found.\n'}
+        message = {'command': 'error', 'message': 'Error: Command not found.'}
         sock.sendto(json.dumps(message).encode('utf-8'), address)
 
 

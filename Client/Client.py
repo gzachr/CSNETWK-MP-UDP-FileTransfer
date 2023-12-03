@@ -36,7 +36,7 @@ def receive_response():
 
                 response = json.loads(data.decode())
 
-                if response['command'] == 'join' or response['command'] == 'error':
+                if response['command'] == 'join' or response['command'] == 'error' or response['command'] == 'store':
                         print(f"{response['message']}\n")
                 
                 elif response['command'] == 'leave':
@@ -87,21 +87,22 @@ def start():
                 print('Error: Please connect to the server first.\n')
         
         elif command == '/store':
-            print(params)
             if server_address:
                 if is_registered:
                     if len(params) == 1:
                         if os.path.isfile(params[0]):
                             try:
                                 with open(params[0], 'rb') as file:
-                                    file_data = file.read(1024)
-
                                     client_socket.sendto(json.dumps(message).encode('utf-8'), server_address)
+                                    file_data = file.read(1024)
 
                                     while file_data:
                                         client_socket.sendto(file_data, server_address)
                                         file_data = file.read(1024)
-
+                                    
+                                    # send empty data packet to signify end of transfer
+                                    client_socket.sendto(b'', server_address)
+                                    
                             except Exception as e:
                                 print(f"Error: {e}")
                         else:
