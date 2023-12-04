@@ -21,6 +21,23 @@ def display_commands():
     print('/all <message> - Send a message to all clients')
     print('/leave - Leave the server\n')
 
+def receive_file(file_name):
+    try:
+        with open(file_name, 'wb') as file:
+            while True:
+                data, addr = client_socket.recvfrom(1024)
+
+                if not data:
+                    break
+
+                file.write(data)
+            
+            file.close()
+            print(f"File received from Server: {file_name}\n")
+    
+    except Exception as e:
+        print(f"Error: {e}\n")
+
 # receive messages from server
 def receive_response():
     global server_address
@@ -61,13 +78,14 @@ def receive_response():
                     if len(response['files']) > 0:
                         for file in response['files']:
                             print(f'\t{file}')
+                        
+                        print('\n')
                     else:
-                        print('\tNo files stored on the server.')
-                    
-                    print('\n')
-
-                # do message based on other responses
-            
+                        print('\tNo files stored on the server.\n')
+                
+                elif response['command'] == 'get':
+                    receive_file(response['file_name'])
+  
             except json.JSONDecodeError:
                 print('Error decoding JSON data from the server.\n')
         
@@ -127,7 +145,7 @@ def start():
                     else:
                         print('Error: Command parameters do not match or is not allowed.\n')
                 else:
-                    print('Error: Please register to the server first.\n')
+                    print('Error: Register a unique handle/alias first.\n')
             else:
                 print('Error: Please connect to the server first.\n')
         
