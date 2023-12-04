@@ -3,10 +3,16 @@
 # CSNETWK S12 MP
 import socket
 import json
+import os
 from datetime import datetime
 
+# dictionary of clients
 clients = {}
-files =[]
+
+# get list of files in current directory
+current_dir = os.getcwd()
+current_dir = current_dir + '\Files'
+files = os.listdir(current_dir)
 
 # Create a UDP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -16,10 +22,13 @@ server_address = ('127.0.0.1', 12345)
 sock.bind(server_address)
 
 print('Server started at {} port {}'.format(*server_address))
+print(current_dir)
 
 def receive_file(file_name):
+    global current_dir
+    file_path = os.path.join(current_dir, file_name)
     try:
-        with open(file_name, 'wb') as file:
+        with open(file_path, 'wb') as file:
             print('Receiving file...')
 
             while True:
@@ -52,6 +61,7 @@ while True:
         print(f"Client {address} connected to server")
         message = {'command': 'join', 'message': "Connection to the File Exchange Server is successful!"}
         sock.sendto(json.dumps(message).encode('utf-8'), address)
+
 
     # handle registration
     elif response['command'] == '/register':
@@ -88,6 +98,7 @@ while True:
         
         print(clients)
     
+
     # handle leaving
     elif response['command'] == '/leave':
         # check num of params
@@ -108,9 +119,27 @@ while True:
             message = {'command': 'leave', 'message': f"Connection closed. Thank you!"}
             sock.sendto(json.dumps(message).encode('utf-8'), address)
     
+
     # handle list of files (dir)
     elif response['command'] == '/dir':
-        pass
+        #check num of params
+        if len(response['params']) != 0:
+            message = {'command': 'error', 'message': 'Error: Command parameters do not match or is not allowed.'}
+            sock.sendto(json.dumps(message).encode('utf-8'), address)
+        
+        #check if registered
+        else:
+            for key, value in clients.items():
+                if value == address:
+                    message = {'command': 'dir', 'files': files, 'message': 'Server Directory'}
+                    sock.sendto(json.dumps(message).encode('utf-8'), address)
+                    break
+            
+            # notify that user is unregistered
+            else:
+                message = {'command': 'error', 'message': "Error: You are not registered."}
+                sock.sendto(json.dumps(message).encode('utf-8'), address)
+
 
     # handle getting of file
     elif response['command'] == '/get':
@@ -129,12 +158,10 @@ while True:
             result = receive_file(file_name)
 
             if result:
-                print("in success result")
                 formatted_time = datetime.now().strftime("<%Y-%m-%d %H:%M:%S>")
                 message = {'command': 'store', 'message': f"{handle}{formatted_time}: Uploaded {file_name}"}
                 sock.sendto(json.dumps(message).encode('utf-8'), address)
             else:
-                print("in fail result")
                 message = {'command': 'error', 'message': "Error: File not successfully stored."}
                 sock.sendto(json.dumps(message).encode('utf-8'), address)
             
@@ -143,10 +170,8 @@ while True:
 
         # notify that user is unregistered
         if flag:
-            print("in no client result")
             message = {'command': 'error', 'message': "Error: You are not registered."}
             sock.sendto(json.dumps(message).encode('utf-8'), address)
-
 
 
     # handle message to single client
@@ -181,7 +206,6 @@ while True:
                 else:
                     message = {'command': 'error', 'handle': user_handle, 'message': 'You cannot send a message to yourself.\n'}
                     sock.sendto(json.dumps(message).encode('utf-8'), address)
-
 
 
     # handle message to all clients

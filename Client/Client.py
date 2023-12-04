@@ -54,6 +54,17 @@ def receive_response():
 
                 elif response['command'] == 'all':
                     print(f"{response['handle']}: {response['message']}\n")
+                
+                elif response['command'] == 'dir':
+                    print(f'{response["message"]}')
+                    
+                    if len(response['files']) > 0:
+                        for file in response['files']:
+                            print(f'\t{file}')
+                    else:
+                        print('\tNo files stored on the server.')
+                    
+                    print('\n')
 
                 # do message based on other responses
             
