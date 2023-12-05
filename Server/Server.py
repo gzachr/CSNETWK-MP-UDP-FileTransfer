@@ -272,8 +272,7 @@ while True:
                 message = {'command': 'all', 'handle': user_handle, 'message': response}
 
                 for value in clients.values():
-                    if value != address:
-                        sock.sendto(json.dumps(message).encode('utf-8'), value)
+                    sock.sendto(json.dumps(message).encode('utf-8'), value)
         
 
     # if command does not exist
