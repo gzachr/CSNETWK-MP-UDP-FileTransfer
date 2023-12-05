@@ -44,54 +44,54 @@ def receive_response():
     global is_registered
 
     while True:
-        if server_address is not None:
-            try:
-                data, addr = client_socket.recvfrom(1024)
+        # if server_address is not None:
+        try:
+            data, addr = client_socket.recvfrom(1024)
 
-                if not data:
-                    break
+            response = json.loads(data.decode())
 
-                response = json.loads(data.decode())
+            if response['command'] == 'join' or response['command'] == 'error' or response['command'] == 'store':
+                print(f"{response['message']}\n")
+            
+            elif response['command'] == 'leave':
+                print(f"{response['message']}\n")
+                server_address = None
+                is_registered = False  
+            
+            elif response['command'] == 'register':
+                is_registered = True
+                print(f"Welcome {response['client']}!")
+                print(f"{response['message']}\n")
 
-                if response['command'] == 'join' or response['command'] == 'error' or response['command'] == 'store':
-                    print(f"{response['message']}\n")
+            elif response['command'] == 'msg':
+                print(f"{response['handle']}: {response['message']}\n")
+
+            elif response['command'] == 'all':
+                print(f"{response['handle']}: {response['message']}\n")
+            
+            elif response['command'] == 'dir':
+                print(f'{response["message"]}')
                 
-                elif response['command'] == 'leave':
-                    print(f"{response['message']}\n")
-                    server_address = None
-                    is_registered = False  
-                
-                elif response['command'] == 'register':
-                    is_registered = True
-                    print(f"Welcome {response['client']}!")
-                    print(f"{response['message']}\n")
-
-                elif response['command'] == 'msg':
-                    print(f"{response['handle']}: {response['message']}\n")
-
-                elif response['command'] == 'all':
-                    print(f"{response['handle']}: {response['message']}\n")
-                
-                elif response['command'] == 'dir':
-                    print(f'{response["message"]}')
+                if len(response['files']) > 0:
+                    for file in response['files']:
+                        print(f'\t{file}')
                     
-                    if len(response['files']) > 0:
-                        for file in response['files']:
-                            print(f'\t{file}')
-                        
-                        print('\n')
-                    else:
-                        print('\tNo files stored on the server.\n')
-                
-                elif response['command'] == 'get':
-                    receive_file(response['file_name'])
-  
-            except json.JSONDecodeError:
-                print('Error decoding JSON data from the server.\n')
-        
+                    print('\n')
+                else:
+                    print('\tNo files stored on the server.\n')
+            
+            elif response['command'] == 'get':
+                receive_file(response['file_name'])
 
+        except ConnectionResetError:
+            print("Error: Connection Failed")
+        
 def start():
+    count = 0
     while True:
+        
+        global server_address
+
         user_input = input()
         parts = user_input.split()
         command = parts[0]
@@ -106,12 +106,20 @@ def start():
                 print('Error: Command parameters do not match or is not allowed.\n')
 
         elif command == '/join':
-            if len(params) == 2 and (params[0] =='127.0.0.1' or params[0] == 'localhost') and params[1] == '12345':
+            if server_address:
+                print('Error: You are already connected to the server.\n')
+            elif len(params) == 2 and (params[0] =='127.0.0.1' or params[0] == 'localhost') and params[1] == '12345':
+                
                 temp = (params[0], int(params[1]))
                 client_socket.sendto(json.dumps(message).encode('utf-8'), temp)
 
-                global server_address 
+                if count == 0:
+                    receive_thread = threading.Thread(target=receive_response)
+                    receive_thread.start()
+        
+
                 server_address = temp
+                count += 1
             else:
                 print('Error: Connection to the Server has failed! Please check IP Address and Port Number.\n')
         
@@ -158,16 +166,12 @@ def start():
         else:
             print('Error: Command not found.\n')
 
+
 # UDP Socket
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 #threads
-receive_thread = threading.Thread(target=receive_response)
-
-receive_thread.start()
 
 print("Input /? to view possible commands")
 print("Enter command: ")
 start()
-
-    
